@@ -29,9 +29,9 @@ export default function RootLayout({
       <body className={`${instrumentSerif.variable} ${geist.variable} font-sans antialiased`}>
         <ThemeProvider>
           <div className="flex min-h-screen bg-background">
-            <Sidebar />
+            {/*<Sidebar />*/}
             {/* offset for fixed sidebar on desktop, full width on mobile */}
-            <main className="flex-1 md:ml-56 min-w-0">
+            <main className="flex-1 min-w-0">
               {children}
             </main>
           </div>

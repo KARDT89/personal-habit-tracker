@@ -28,7 +28,7 @@ export function HabitStatCard({ stat }: Props) {
 
         {/* Link to detail */}
         <Link
-          href={`/habits/${stat.id}`}
+          href={`/app/(application)/habits/${stat.id}`}
           className="text-muted-foreground hover:text-foreground transition-colors"
           aria-label={`View ${stat.name}`}
         >
