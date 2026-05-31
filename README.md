@@ -1,15 +1,8 @@
 # streak. — Personal Habit Tracker
 
-A full-stack habit tracking app built with Next.js 16, demonstrating core
-concepts including SSR, SSG, ISR, API Routes, Server Actions, and database
-integration with Drizzle ORM.
+A full-stack habit tracking app built with Next.js 16, demonstrating SSR, ISR, API Routes, Server Actions, authentication, and database integration with Drizzle ORM.
 
----
-
-## Live Demo
-
-- **Deployed URL**: https://your-deployment-url.vercel.app
-- **GitHub**: https://github.com/your-username/personal-habit-tracker
+**Live**: [streak.tamalsarkar.dev](https://streak.tamalsarkar.dev) · **GitHub**: [KARDT89/personal-habit-tracker](https://github.com/KARDT89/personal-habit-tracker)
 
 ---
 
@@ -21,9 +14,11 @@ integration with Drizzle ORM.
 | Language | TypeScript |
 | Database | PostgreSQL via Neon (serverless) |
 | ORM | Drizzle ORM |
+| Auth | Better Auth (email/password + GitHub OAuth) |
 | Styling | Tailwind CSS v4 |
-| Components | shadcn/ui |
-| Fonts | Syne + DM Sans (next/font/google) |
+| Components | shadcn/ui + Radix UI |
+| Charts | Recharts |
+| Fonts | Instrument Serif + Geist (next/font/google) |
 | Theming | next-themes (light/dark mode) |
 | Date utils | date-fns |
 | Deployment | Vercel |
@@ -32,13 +27,16 @@ integration with Drizzle ORM.
 
 ## Features
 
-- Create, edit, and archive habits
+- Sign up / sign in with email & password or GitHub OAuth
+- Create, edit, and archive habits (per-user, isolated data)
 - Check off habits daily with a single click
-- Streak tracking per habit (current streak displayed live)
+- Streak tracking per habit displayed live on each card
 - 7-day dot history row on every habit card
-- 12-week completion calendar on habit detail page
+- 12-week bar chart (Recharts) on habit detail page
+- Full completion calendar on habit detail page
 - Stats page with per-habit breakdown and overall metrics
 - Light and dark mode with system preference detection
+- Auth-protected routes via Next.js middleware
 - Fully typed with TypeScript throughout
 
 ---
@@ -46,10 +44,11 @@ integration with Drizzle ORM.
 ## Project Structure
 
 ```
-src/
-├── app/
-│   ├── layout.tsx              # Root layout — sidebar + theme provider
-│   ├── page.tsx                # Landing page (SSG)
+app/
+├── layout.tsx                  # Root layout — ThemeProvider + fonts
+├── page.tsx                    # Landing page (SSR — reads session)
+├── (application)/
+│   ├── layout.tsx              # App shell — sidebar + main area
 │   ├── dashboard/
 │   │   └── page.tsx            # Today's habits (SSR)
 │   ├── habits/
@@ -57,43 +56,50 @@ src/
 │   │   └── [id]/
 │   │       ├── page.tsx        # Single habit detail (SSR)
 │   │       └── not-found.tsx   # 404 for missing habits
-│   ├── stats/
-│   │   └── page.tsx            # Progress stats (ISR)
-│   └── api/
-│       ├── habits/
-│       │   ├── route.ts        # GET all, POST new
-│       │   └── [id]/route.ts   # GET one, PUT, DELETE
-│       └── completions/
-│           ├── route.ts        # GET completions
-│           └── [id]/route.ts   # POST, DELETE completion
-├── actions/
-│   ├── habit-actions.ts        # createHabit, updateHabit, deleteHabit
-│   └── completion-actions.ts   # toggleCompletion
-├── components/
-│   ├── sidebar.tsx
-│   ├── sidebar-nav-item.tsx
-│   ├── theme-toggle.tsx
-│   ├── theme-provider.tsx
-│   ├── dashboard-header.tsx
-│   ├── stats-row.tsx
-│   ├── habit-card.tsx
-│   ├── habit-list-item.tsx
-│   ├── habit-detail-header.tsx
-│   ├── habit-calendar.tsx
-│   ├── create-habit-dialog.tsx
-│   ├── edit-habit-dialog.tsx
-│   ├── stats-overview.tsx
-│   └── habit-stat-card.tsx
-├── db/
-│   ├── index.ts                # Drizzle client (Neon serverless)
-│   └── schema.ts               # habits + completions tables
-├── lib/
-│   ├── streak.ts               # Streak calculation + date utilities
-│   ├── dashboard.ts            # Dashboard data fetching
-│   ├── habit-detail.ts         # Single habit data fetching
-│   └── stats.ts                # Stats aggregation
-└── types/
-    └── index.ts                # Shared TypeScript types
+│   └── stats/
+│       └── page.tsx            # Progress stats (ISR, 1hr cache)
+├── (auth)/
+│   ├── sign-in/page.tsx        # Email + GitHub sign-in
+│   └── sign-up/page.tsx        # Email + GitHub sign-up
+└── api/
+    ├── auth/[...all]/route.ts  # Better Auth handler (GET + POST)
+    ├── habits/[id]/route.ts    # GET, PUT, DELETE a single habit
+    └── completions/
+        ├── route.ts            # GET completions by habitId
+        └── [id]/route.ts       # POST, DELETE a completion
+
+components/
+├── sidebar.tsx
+├── sidebar-nav-item.tsx
+├── theme-toggle.tsx
+├── theme-provider.tsx
+├── dashboard-header.tsx
+├── stats-row.tsx
+├── habit-card.tsx
+├── habit-list-item.tsx
+├── habit-detail-header.tsx
+├── habit-calender.tsx          # 12-week completion calendar
+├── habit-trend-chart.tsx       # Weekly bar chart (Recharts)
+├── create-habit-dialog.tsx
+├── edit-habit-dialog.tsx
+├── stats-overview.tsx
+└── habit-stat-card.tsx
+
+lib/
+├── auth.ts                     # Better Auth server config
+├── auth-client.ts              # Better Auth browser client
+├── streak.ts                   # Streak calculation + date utils
+├── dashboard.ts                # Dashboard data fetching
+├── habits.ts                   # Habit list data fetching
+├── habit-detail.ts             # Single habit data fetching
+└── stats.ts                    # Stats aggregation
+
+db/
+├── index.ts                    # Drizzle client (Neon serverless)
+└── schema.ts                   # habits, completions, auth tables
+
+middleware/
+└── middleware.ts               # Auth-guard: redirect unauthenticated users
 ```
 
 ---
@@ -102,11 +108,15 @@ src/
 
 | Route | Type | Description |
 |---|---|---|
-| `/` | SSG | Landing page — static, no data |
+| `/` | SSR | Landing page — shows session-aware nav and CTA |
+| `/sign-in` | Client | Email/password or GitHub sign-in |
+| `/sign-up` | Client | Email/password or GitHub sign-up |
 | `/dashboard` | SSR | Today's habits, streak stats, toggle completions |
 | `/habits` | SSR | All habits list, create new habit |
-| `/habits/[id]` | SSR | Single habit detail, edit, 12-week calendar |
+| `/habits/[id]` | SSR | Single habit detail, edit, trend chart, calendar |
 | `/stats` | ISR | Aggregated stats, per-habit breakdown |
+
+The `/dashboard`, `/habits`, and `/stats` routes are protected by middleware and redirect unauthenticated users to `/sign-in`.
 
 ---
 
@@ -114,8 +124,7 @@ src/
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/habits` | Fetch all active habits |
-| POST | `/api/habits` | Create a new habit |
+| GET/POST | `/api/auth/[...all]` | Better Auth handler (sessions, OAuth callbacks) |
 | GET | `/api/habits/[id]` | Fetch a single habit |
 | PUT | `/api/habits/[id]` | Update a habit |
 | DELETE | `/api/habits/[id]` | Archive a habit (soft delete) |
@@ -123,7 +132,7 @@ src/
 | POST | `/api/completions/[id]` | Log a completion |
 | DELETE | `/api/completions/[id]` | Remove a completion |
 
-All API routes return a consistent response shape:
+All app routes return a consistent response shape:
 ```json
 { "success": true, "data": {} }
 { "success": false, "error": "message" }
@@ -131,95 +140,58 @@ All API routes return a consistent response shape:
 
 ---
 
-## Server Actions
+## Authentication
 
-| Action | File | Description |
-|---|---|---|
-| `createHabit` | `actions/habit-actions.ts` | Creates a new habit from form data |
-| `updateHabit` | `actions/habit-actions.ts` | Updates habit name, description, color, frequency |
-| `deleteHabit` | `actions/habit-actions.ts` | Archives a habit (soft delete) |
-| `toggleCompletion` | `actions/completion-actions.ts` | Checks or unchecks a habit for a given date |
+Auth is handled by **Better Auth** with two providers:
 
-### API Routes vs Server Actions — the distinction
+- **Email/password** — register and sign in with an email address
+- **GitHub OAuth** — one-click sign-in via GitHub
 
-**API Routes** (`/app/api/...`) are HTTP endpoints. They can be called
-by anyone with a `fetch` request — a mobile app, an external service,
-or a client component. They are the right choice for CRUD operations
-that need to be accessible as a standard REST API.
-
-**Server Actions** (`/actions/...`) are server-side functions called
-directly from React components — no `fetch`, no endpoint, no HTTP
-overhead. They are the right choice for form submissions and direct
-UI interactions where you just want to run server code and revalidate
-the page. In this project, habit creation via the dialog form and the
-daily toggle button are the clearest use cases — the user clicks
-something, server code runs, the page updates.
+Sessions are stored in the database (the `session` table). The middleware reads the session cookie on every protected request and redirects unauthenticated users to `/sign-in`. All habit and completion data is scoped to the authenticated user via the `userId` foreign key.
 
 ---
 
 ## Rendering Strategies
 
-### SSG — Static Site Generation
-**Page**: `/`  
-Next.js renders this page once at build time. No data fetching means
-no reason to re-render on every request. Fast, cacheable, perfect for
-a landing page.
+### SSR — Server-Side Rendering
+**Pages**: `/`, `/dashboard`, `/habits`, `/habits/[id]`
 
-### SSR — Server Side Rendering
-**Pages**: `/dashboard`, `/habits`, `/habits/[id]`  
-These pages fetch from the database at request time. The dashboard
-shows today's completions which change throughout the day. The habit
-detail page shows live streak data. SSR ensures the data is always
-fresh when the user loads the page.
+These pages call `auth.api.getSession()` or query the database at request time. This guarantees the data is always fresh — today's completions, the current streak, and the active session state all change throughout the day.
 
 ### ISR — Incremental Static Regeneration
-**Page**: `/stats`  
+**Page**: `/stats`
 ```ts
-export const revalidate = 3600; // revalidate every hour
+export const revalidate = 3600; // regenerate every hour
 ```
-Stats are aggregated data that don't need to update in real time.
-Next.js serves a cached version instantly and regenerates in the
-background every hour. This is faster than SSR for a page where
-slight staleness is acceptable.
+Aggregated stats don't need to be real-time. Next.js serves a cached version instantly and regenerates it in the background every hour. Slight staleness is acceptable here; the faster response is the right trade-off.
 
 ---
 
-## Database Setup
+## Database Schema
 
-This project uses **Neon** — a serverless PostgreSQL provider.
-
-1. Create a free account at [neon.tech](https://neon.tech)
-2. Create a new project and copy the connection string
-3. Add it to `.env.local` as `DATABASE_URL`
-4. Run migrations:
-
-```bash
-npx drizzle-kit generate
-npx drizzle-kit migrate
-```
-
-### Schema
-
-**habits**
+### habits
 | Column | Type | Notes |
 |---|---|---|
-| id | text | cuid, primary key |
+| id | text | UUID, primary key |
 | name | text | required |
 | description | text | nullable |
-| color | text | hex color, default green |
-| frequency | text | daily or weekly |
-| userId | text | nullable, auth-ready |
+| color | text | hex color, default `#1D9E75` |
+| frequency | text | `daily` or `weekly` |
+| userId | text | NOT NULL, FK → user.id (cascade delete) |
 | isArchived | boolean | soft delete flag |
 | createdAt | timestamp | auto |
 | updatedAt | timestamp | auto |
 
-**completions**
+### completions
 | Column | Type | Notes |
 |---|---|---|
-| id | text | cuid, primary key |
-| habitId | text | foreign key → habits.id |
-| date | text | YYYY-MM-DD string |
+| id | text | UUID, primary key |
+| habitId | text | FK → habits.id (cascade delete) |
+| date | text | `YYYY-MM-DD` string |
 | createdAt | timestamp | auto |
+
+### Auth tables (managed by Better Auth)
+`user`, `session`, `account`, `verification` — standard Better Auth schema, stored in the same Neon database.
 
 ---
 
@@ -227,7 +199,7 @@ npx drizzle-kit migrate
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/your-username/personal-habit-tracker
+git clone https://github.com/KARDT89/personal-habit-tracker
 cd personal-habit-tracker
 
 # 2. Install dependencies
@@ -235,7 +207,7 @@ npm install
 
 # 3. Set up environment variables
 cp .env.example .env.local
-# Add your DATABASE_URL
+# Fill in DATABASE_URL, BETTER_AUTH_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
 
 # 4. Run database migrations
 npx drizzle-kit generate
@@ -251,55 +223,48 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Environment Variables
 
-Create a `.env.local` file at the root:
-
+`.env.local`:
 ```bash
-DATABASE_URL="postgresql://..."
+# Neon PostgreSQL
+DATABASE_URL="postgresql://username:password@host/dbname?sslmode=require"
+
+# Better Auth — generate with: openssl rand -base64 32
+BETTER_AUTH_SECRET="your-secret-here"
+BETTER_AUTH_URL="http://localhost:3000"
+
+# GitHub OAuth (create at github.com/settings/developers)
+GITHUB_CLIENT_ID="your-github-client-id"
+GITHUB_CLIENT_SECRET="your-github-client-secret"
 ```
 
-Also create `.env.example` for the repo:
-
+`.env.example`:
 ```bash
 DATABASE_URL="postgresql://username:password@host/dbname?sslmode=require"
+BETTER_AUTH_SECRET=""
+BETTER_AUTH_URL="http://localhost:3000"
+GITHUB_CLIENT_ID=""
+GITHUB_CLIENT_SECRET=""
 ```
 
 ---
 
-## Concepts Covered from Class
+## Concepts Demonstrated
 
 | Concept | Implementation |
 |---|---|
-| Next.js project setup | App Router, TypeScript, Tailwind |
-| File based routing | Every page maps to a folder in `/app` |
-| Layouts | `app/layout.tsx` wraps all pages with sidebar |
-| Multiple pages | `/`, `/dashboard`, `/habits`, `/habits/[id]`, `/stats` |
-| SSR | Dashboard and habits pages — db call in async server component |
-| SSG | Landing page — no data fetching, rendered at build time |
+| Next.js App Router | Route groups `(application)` and `(auth)` for layout isolation |
+| File-based routing | Every page maps to a folder in `/app` |
+| Layouts | Root layout wraps everything; app layout adds sidebar |
+| SSR | Dashboard, habits, and habit detail — DB query in async server component |
 | ISR | Stats page — `export const revalidate = 3600` |
-| API Routes | Full CRUD for habits and completions under `/api` |
+| API Routes | CRUD for habits and completions under `/api` |
 | GET POST PUT DELETE | All four HTTP methods implemented |
-| Database connection | Drizzle ORM + Neon serverless PostgreSQL |
-| Structured API responses | Every route returns `{ success, data/error }` |
+| Server Actions | `use server` — habit create/update/delete, toggle completion |
+| API vs Server Actions | API = REST endpoints callable externally; Actions = direct server calls from React |
+| Authentication | Better Auth — email/password and GitHub OAuth, session in DB |
+| Middleware | Route protection — redirect unauthenticated requests to sign-in |
+| Database | Drizzle ORM + Neon serverless PostgreSQL |
+| Typed responses | Every route returns `{ success, data/error }` |
 | Error handling | try/catch in every API route and server action |
-| Server Actions | `use server` in `actions/` folder |
-| Server Action use case | Form submissions, toggle button |
-| API vs Server Actions | API = REST endpoints, Actions = direct server calls from UI |
-
----
-
-## Assumptions and Limitations
-
-- Single user mode — no authentication implemented. The schema
-  includes a `userId` column that is nullable, making it straightforward
-  to add BetterAuth or NextAuth later without a schema change.
-- Soft delete only — habits are archived, not permanently deleted,
-  to preserve completion history.
-- Weekly habits are tracked but streak logic is optimized for daily
-  habits. Weekly streak calculation can be added as an extension.
-- The stats page has a 1-hour cache — this is intentional (ISR) and
-  not a bug.
-
-Also create .env.example at the root:
-bash# Neon PostgreSQL connection string
-# Get this from your Neon dashboard at https://neon.tech
-DATABASE_URL="postgresql://username:password@host/dbname?sslmode=require"
+| Charts | Recharts bar chart for weekly trend data |
+| Theming | next-themes — light/dark mode with system preference |
