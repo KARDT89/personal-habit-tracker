@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
-import { Syne, DM_Sans } from "next/font/google";
+import { Instrument_Serif, Geist } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const syne = Syne({
+const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-syne",
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
 });
 
-const dmSans = DM_Sans({
+const geist = Geist({
   subsets: ["latin"],
-  variable: "--font-dm-sans",
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -21,19 +23,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${syne.variable} ${dmSans.variable} antialiased`}>
-         <ThemeProvider>
-        <div className="flex min-h-screen bg-background">
-          <Sidebar />
-          <main className="flex-1 ml-64">
-            {children}
-          </main>
-        </div>
+      <body className={`${instrumentSerif.variable} ${geist.variable} font-sans antialiased`}>
+        <ThemeProvider>
+          <div className="flex min-h-screen bg-background">
+            <Sidebar />
+            {/* offset for fixed sidebar on desktop, full width on mobile */}
+            <main className="flex-1 md:ml-56 min-w-0">
+              {children}
+            </main>
+          </div>
         </ThemeProvider>
       </body>
     </html>
