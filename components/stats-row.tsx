@@ -45,7 +45,7 @@ export function StatsRow({
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
           Today
         </p>
-        <p className="text-3xl font-bold mt-2">{completionPercent}%</p>
+        <p className="text-2xl font-bold mt-2">{completionPercent}%</p>
         <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden">
           <div
             className="h-full bg-primary rounded-full transition-all"
