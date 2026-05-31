@@ -66,7 +66,7 @@ export function HabitListItem({ habit }: Props) {
           <Trash2 size={15} />
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-          <Link href={`/app/(application)/habits/${habit.id}`} aria-label="View habit">
+          <Link href={`/habits/${habit.id}`} aria-label="View habit">
             <ArrowRight size={15} />
           </Link>
         </Button>

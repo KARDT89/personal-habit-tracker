@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListChecks, BarChart2, Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, ListChecks, BarChart2, Menu, LogOut } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSession, signOut } from "@/lib/auth-client";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -38,6 +39,38 @@ function NavLinks({ onNav }: { onNav?: () => void }) {
   );
 }
 
+function SidebarFooter() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  return (
+    <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="w-6 h-6 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-medium shrink-0">
+          {session?.user?.name?.[0]?.toUpperCase() ?? "?"}
+        </div>
+        <span className="text-xs text-muted-foreground truncate">
+          {session?.user?.name ?? "..."}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <ThemeToggle />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          aria-label="Sign out"
+          onClick={() =>
+            signOut({ fetchOptions: { onSuccess: () => router.push("/sign-in") } })
+          }
+        >
+          <LogOut size={14} />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function SidebarInner({ onNav }: { onNav?: () => void }) {
   return (
     <div className="flex flex-col h-full">
@@ -49,10 +82,7 @@ function SidebarInner({ onNav }: { onNav?: () => void }) {
         </Link>
       </div>
       <NavLinks onNav={onNav} />
-      <div className="px-4 py-3 border-t border-border flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">Single user</p>
-        <ThemeToggle />
-      </div>
+      <SidebarFooter />
     </div>
   );
 }
@@ -60,12 +90,10 @@ function SidebarInner({ onNav }: { onNav?: () => void }) {
 export function Sidebar() {
   return (
     <>
-      {/* Desktop — fixed sidebar */}
       <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 border-r border-border bg-background flex-col z-20">
         <SidebarInner />
       </aside>
 
-      {/* Mobile — top bar + Sheet drawer */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-background border-b border-border flex items-center justify-between px-4 h-14">
         <Link href="/">
           <span className="font-serif text-xl tracking-tight">
@@ -85,7 +113,6 @@ export function Sidebar() {
         </Sheet>
       </div>
 
-      {/* Push content down on mobile (topbar height) */}
       <div className="md:hidden h-14" />
     </>
   );

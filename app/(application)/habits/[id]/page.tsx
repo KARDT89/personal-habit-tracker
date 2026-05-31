@@ -21,6 +21,7 @@ export default async function HabitDetailPage({ params }: Props) {
   const { id } = await params;
   const habit = await getHabitDetail(id);
   if (!habit) notFound();
+  console.log(id)
 
   const streak = calculateStreak(habit.completions);
   const todayString = getTodayString();

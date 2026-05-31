@@ -1,19 +1,15 @@
-import { db } from "@/db";
-import { habits } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { CreateHabitDialog } from "@/components/create-habit-dialog";
 import { HabitListItem } from "@/components/habit-list-item";
+
+import { getHabits } from "@/lib/habits";
+
 
 export const metadata = {
   title: "Habits — streak.",
 };
 
 export default async function HabitsPage() {
-  const allHabits = await db
-    .select()
-    .from(habits)
-    .where(eq(habits.isArchived, false))
-    .orderBy(habits.createdAt);
+  const allHabits = await getHabits();
 
   return (
     <div className="p-8 mt-12 max-w-3xl">
