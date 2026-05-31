@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {getSessionCookie} from 'better-auth/cookies'
 
 export function middleware(request: NextRequest) {
-  const session = request.cookies.get("better-auth.session_token")?.value;
+  const session = getSessionCookie(request)
   const { pathname } = request.nextUrl;
 
   const isAuthPage = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
